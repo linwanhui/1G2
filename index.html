@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中一G2单元三核心</title>
+  
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 引入 React 和 ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- 引入 Babel 用于在浏览器中编译 JSX -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    /* 添加一些基础动画支持 */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideInFromBottom {
+      from { opacity: 0; transform: translateY(1rem); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes zoomIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .animate-in.fade-in { animation: fadeIn 0.7s ease-out forwards; }
+    .animate-in.slide-in-from-bottom-4 { animation: slideInFromBottom 0.5s ease-out forwards; }
+    .animate-in.zoom-in { animation: zoomIn 0.2s ease-out forwards; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    // --- 图标组件 (替代原本的 lucide-react) ---
+    const MapPin = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+    );
+    const Utensils = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"></path><path d="M7 2v20"></path><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"></path></svg>
+    );
+    const Gamepad2 = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="6" x2="10" y1="12" y2="12"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="15" x2="15.01" y1="13" y2="13"/><line x1="18" x2="18.01" y1="11" y2="11"/><rect width="20" height="12" x="2" y="6" rx="2"/></svg>
+    );
+    const X = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    );
+    const ChevronRight = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+    );
+    const Info = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+    );
+    const Users = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    );
+    const AlertCircle = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+    );
+    const Check = ({ className }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"></polyline></svg>
+    );
+
+    // --- 数据 ---
+    const VOCABULARY = {
+      "星耀樟宜": { pinyin: "xīng yào zhāng yí", meaning: "机场里很有名的大商场", english: "Jewel Changi Airport", example: "周末，我们去星耀樟宜看大瀑布。" },
+      "正式": { pinyin: "zhèng shì", meaning: "符合规定、公认标准", english: "Official / Formal", example: "游乐园明天正式开门。" },
+      "开幕": { pinyin: "kāi mù", meaning: "第一次开门，正式开始", english: "Opening", example: "新的图书馆今天开幕了。" },
+      "休闲": { pinyin: "xiū xián", meaning: "休息、玩耍、放松", english: "Leisure", example: "周末，我们去公园休闲放松。" },
+      "去处": { pinyin: "qù chù", meaning: "可以去的地方", english: "Place to go", example: "游乐园是周末玩耍的好去处。" },
+      "外壳": { pinyin: "wài ké", meaning: "外面的壳或构造", english: "Outer shell", example: "乌龟有一个很硬的外壳。" },
+      "钢铁": { pinyin: "gāng tiě", meaning: "一种很硬的金属材料", english: "Steel", example: "这座大桥是用钢铁做的。" },
+      "横梁": { pinyin: "héng liáng", meaning: "屋顶下面长长的支柱", english: "Crossbeam", example: "屋顶上的横梁很结实。" },
+      "构成": { pinyin: "gòu chéng", meaning: "做成、组成", english: "Make up", example: "小积木可以构成一座大房子。" },
+      "覆盖": { pinyin: "fù gài", meaning: "盖在上面", english: "Cover", example: "操场被白雪覆盖了。" },
+      "闪亮": { pinyin: "shǎn liàng", meaning: "一闪一闪的，很亮", english: "Shining", example: "天上的星星很闪亮。" },
+      "宝石": { pinyin: "bǎo shí", meaning: "很漂亮的石头，像钻石", english: "Gem", example: "妈妈的戒指上有一颗红宝石。" },
+      "雨漩涡": { pinyin: "yǔ xuán wō", meaning: "那个大瀑布的名字", english: "Rain Vortex", example: "星耀樟宜的“雨漩涡”真好看。" },
+      "吸引": { pinyin: "xī yǐn", meaning: "让人想去看", english: "Attract", example: "这个好玩的游戏吸引了我。" },
+      "目前": { pinyin: "mù qián", meaning: "现在", english: "Now / Currently", example: "目前，我是一名小学生。" },
+      "室内": { pinyin: "shì nèi", meaning: "在屋子里面", english: "Indoor", example: "外面下雨了，我们在室内玩。" },
+      "瀑布": { pinyin: "pù bù", meaning: "从高处流下来的水", english: "Waterfall", example: "山上的瀑布真高啊！" },
+      "置身其中": { pinyin: "zhì shēn qí zhōng", meaning: "把自己放在某个事情或环境中", english: "Immerse/place oneself in it", example: "走到森林里，置身其中，感觉很凉爽。" },
+      "游乐设施": { pinyin: "yóu lè shè shī", meaning: "在游乐园、主题公园或公共场所，专门供人们玩乐的机器或设备", english: "Play facilities", example: "公园里有很多好玩的游乐设施。" },
+      "天悬桥": { pinyin: "tiān xuán qiáo", meaning: "挂在高空中的桥", english: "Canopy Bridge", example: "走在天悬桥上，我觉得很高。" },
+      "迷宫": { pinyin: "mí gōng", meaning: "路很多，不容易走出来的地方", english: "Maze", example: "我在迷宫里找不到出口。" },
+      "网状": { pinyin: "wǎng zhuàng", meaning: "长得像渔网一样", english: "Net-like", example: "蜘蛛织了一个网状的网。" },
+      "步道": { pinyin: "bù dào", meaning: "走路的小路", english: "Walkway", example: "爷爷每天在公园的步道上散步。" },
+      "摇摇晃晃": { pinyin: "yáo yáo huàng huàng", meaning: "站不稳，动来动去", english: "Wobbly / Shaky", example: "小妹妹走路摇摇晃晃的。" },
+      "胆量": { pinyin: "dǎn liàng", meaning: "不怕的勇气", english: "Courage / Guts", example: "玩过山车需要很大的胆量。" },
+      "蹦跳": { pinyin: "bèng tiào", meaning: "跳来跳去", english: "Bounce / Jump", example: "小兔子在草地上开心地蹦跳。" },
+      "应有尽有": { pinyin: "yīng yǒu jìn yǒu", meaning: "该有的全都有，非常多", english: "Have everything", example: "大超市里的东西应有尽有。" },
+      "甚至": { pinyin: "shèn zhì", meaning: "更厉害的是...", english: "Even", example: "他跑得很快，甚至比我还快。" },
+      "难得一见": { pinyin: "nán dé yī jiàn", meaning: "很少见，很难见到", english: "Rarely seen", example: "这么大的苹果真是难得一见。" },
+      "商店": { pinyin: "shāng diàn", meaning: "买卖物品的地方", english: "Store / Shop", example: "这家商店卖很多好玩的玩具。" },
+      "零食店": { pinyin: "líng shí diàn", meaning: "卖糖果、薯片等小吃的地方", english: "Snack Shop", icon: "🍿", example: "我去零食店买糖果和薯片。" },
+      "甜品店": { pinyin: "tián pǐn diàn", meaning: "卖蛋糕、冰激凌等甜食的地方", english: "Dessert Shop", icon: "🍰", example: "我最喜欢去甜品店吃冰淇淋。" },
+      "饮料店": { pinyin: "yǐn liào diàn", meaning: "卖泡泡茶、果汁等喝的地方", english: "Drink Shop", icon: "🥤", example: "天气好热，哥哥去饮料店买果汁。" },
+      "特色餐馆": { pinyin: "tè sè cān guǎn", meaning: "卖特别好吃、出名饭菜的地方", english: "Specialty Restaurant", icon: "🍱", example: "爸爸带我们去特色餐馆吃好吃的。" },
+      "列数字": { pinyin: "liè shù zì", meaning: "写出具体的数字", english: "List numbers", example: "文章里列数字可以让人更清楚。" },
+      "举例子": { pinyin: "jǔ lì zi", meaning: "给出真实的例子", english: "Give examples", example: "老师举例子让我们更容易明白。" },
+      "具体": { pinyin: "jù tǐ", meaning: "清楚明白，不含糊", english: "Specific", example: "请你说得具体一点。" },
+      "说明": { pinyin: "shuō míng", meaning: "解释清楚", english: "Explain", example: "他向老师说明了迟到的原因。" },
+      "特点": { pinyin: "tè diǎn", meaning: "特别的地方", english: "Characteristic / Feature", example: "长颈鹿最大的特点是脖子很长。" },
+      "真实": { pinyin: "zhēn shí", meaning: "真的，不是假的", english: "Real / True", example: "这是一个真实的故事。" },
+      "准确": { pinyin: "zhǔn què", meaning: "对的，没有错", english: "Accurate", example: "他的答案非常准确。" },
+      "实际": { pinyin: "shí jì", meaning: "真实发生的事情", english: "Actual / Practical", example: "我们要根据实际情况来决定。" },
+      "容易": { pinyin: "róng yì", meaning: "不难，很简单", english: "Easy", example: "这道数学题很容易。" },
+      "明白": { pinyin: "míng bai", meaning: "懂了，知道了", english: "Understand", example: "听了老师的解释，我终于明白了。" },
+      "事物": { pinyin: "shì wù", meaning: "东西或事情", english: "Thing / Object", example: "我们要仔细观察周围的事物。" }
+    };
+
+    const SKILL_EXPLANATIONS = {
+      "列数字": [
+        {text: "用", pinyin: "yòng"}, {text: "具体", pinyin: "jù tǐ"}, {text: "的", pinyin: "de"}, {text: "数字", pinyin: "shù zì"}, {text: "来", pinyin: "lái"}, {text: "说明", pinyin: "shuō míng"}, {text: "事物", pinyin: "shì wù"}, {text: "的", pinyin: "de"}, {text: "特点", pinyin: "tè diǎn"}, {text: "，", pinyin: ""},
+        {text: "让人", pinyin: "ràng rén"}, {text: "觉得", pinyin: "jué de"}, {text: "更", pinyin: "gèng"}, {text: "真实", pinyin: "zhēn shí"}, {text: "、", pinyin: ""}, {text: "更", pinyin: "gèng"}, {text: "准确", pinyin: "zhǔn què"}, {text: "。", pinyin: ""}
+      ],
+      "举例子": [
+        {text: "举出", pinyin: "jǔ chū"}, {text: "实际", pinyin: "shí jì"}, {text: "的", pinyin: "de"}, {text: "例子", pinyin: "lì zi"}, {text: "来", pinyin: "lái"}, {text: "说明", pinyin: "shuō míng"}, {text: "事物", pinyin: "shì wù"}, {text: "，", pinyin: ""},
+        {text: "让人", pinyin: "ràng rén"}, {text: "更", pinyin: "gèng"}, {text: "容易", pinyin: "róng yì"}, {text: "明白", pinyin: "míng bai"}, {text: "。", pinyin: ""}
+      ]
+    };
+
+    const SECTIONS = [
+      {
+        id: 'intro',
+        title: '开头',
+        member: '1号',
+        icon: <Info className="w-6 h-6" />,
+        color: 'bg-blue-500',
+        content: [
+          { text: "星耀樟宜", pinyin: "xīng yào zhāng yí" }, { text: "在", pinyin: "zài" }, { text: "2019年", pinyin: "èr líng yī jiǔ nián" }, { text: "10月", pinyin: "shí yuè" }, { text: "18日", pinyin: "shí bā rì" }, { text: "正式", pinyin: "zhèng shì" }, { text: "开幕", pinyin: "kāi mù" }, { text: "，", pinyin: "" },
+          { text: "我们", pinyin: "wǒ men" }, { text: "又", pinyin: "yòu" }, { text: "多了", pinyin: "duō le" }, { text: "一个", pinyin: "yí gè" }, { text: "休闲", pinyin: "xiū xián" }, { text: "的", pinyin: "de" }, { text: "好", pinyin: "hǎo" }, { text: "去处", pinyin: "qù chù" }, { text: "。", pinyin: "" }
+        ],
+        quiz: {
+          question: "星耀樟宜在几时正式开幕？",
+          answer: "2019年10月18日"
+        }
+      },
+      {
+        id: 'sight-1',
+        title: '建筑外壳',
+        member: '1号',
+        icon: <MapPin className="w-6 h-6" />,
+        color: 'bg-orange-500',
+        content: [
+          { text: "星耀樟宜", pinyin: "xīng yào zhāng yí" }, { text: "的", pinyin: "de" }, { text: "外壳", pinyin: "wài ké" }, { text: "由", pinyin: "yóu" }, { text: "大约", pinyin: "dà yuē" }, { text: "1万", pinyin: "yí wàn" }, { text: "8000根", pinyin: "bā qiān gēn" }, { text: "钢铁", pinyin: "gāng tiě" }, { text: "制成的", pinyin: "zhì chéng de" }, { text: "横梁", pinyin: "héng liáng" }, { text: "构成", pinyin: "gòu chéng" }, { text: "，", pinyin: "" },
+          { text: "覆盖", pinyin: "fù gài" }, { text: "着", pinyin: "zhe" }, { text: "9000多", pinyin: "jiǔ qiān duō" }, { text: "片", pinyin: "piàn" }, { text: "玻璃", pinyin: "bō li" }, { text: "。", pinyin: "" }, { text: "从", pinyin: "cóng" }, { text: "空中", pinyin: "kōng zhōng" }, { text: "看", pinyin: "kàn" }, { text: "，", pinyin: "" },
+          { text: "它", pinyin: "tā" }, { text: "就像", pinyin: "jiù xiàng" }, { text: "一颗", pinyin: "yì kē" }, { text: "闪亮的", pinyin: "shǎn liàng de" }, { text: "宝石", pinyin: "bǎo shí" }, { text: "。", pinyin: "" }
+        ],
+        quiz: {
+          question: "星耀樟宜看起来像一颗闪亮的________？",
+          answer: "宝石"
+        },
+        skill: {
+          content: [
+            { text: "星耀樟宜", pinyin: "xīng yào zhāng yí" }, { text: "的", pinyin: "de" }, { text: "外壳", pinyin: "wài ké" }, { text: "由", pinyin: "yóu" }, { text: "大约", pinyin: "dà yuē" }, { text: "1万", pinyin: "yí wàn" }, { text: "8000根", pinyin: "bā qiān gēn" }, { text: "钢铁", pinyin: "gāng tiě" }, { text: "制成的", pinyin: "zhì chéng de" }, { text: "横梁", pinyin: "héng liáng" }, { text: "构成", pinyin: "gòu chéng" }, { text: "，", pinyin: "" },
+            { text: "覆盖", pinyin: "fù gài" }, { text: "着", pinyin: "zhe" }, { text: "9000多", pinyin: "jiǔ qiān duō" }, { text: "片", pinyin: "piàn" }, { text: "玻璃", pinyin: "bō li" }, { text: "。", pinyin: "" }
+          ],
+          answer: "列数字"
+        }
+      },
+      {
+        id: 'sight-2',
+        title: '雨漩涡',
+        member: '2号',
+        icon: <MapPin className="w-6 h-6" />,
+        color: 'bg-indigo-500',
+        content: [
+          { text: "“", pinyin: "" }, { text: "雨漩涡", pinyin: "yǔ xuán wō" }, { text: "”", pinyin: "" }, { text: "是", pinyin: "shì" }, { text: "星耀樟宜", pinyin: "xīng yào zhāng yí" }, { text: "最", pinyin: "zuì" }, { text: "吸引人", pinyin: "xī yǐn rén" }, { text: "的" }, { text: "地方", pinyin: "dì fang" }, { text: "。", pinyin: "" },
+          { text: "它", pinyin: "tā" }, { text: "高", pinyin: "gāo" }, { text: "40米", pinyin: "sì shí mǐ" }, { text: "，", pinyin: "" }, { text: "从", pinyin: "cóng" }, { text: "五楼", pinyin: "wǔ lóu" }, { text: "一直", pinyin: "yì zhí" }, { text: "到", pinyin: "dào" }, { text: "地下", pinyin: "dì xià" }, { text: "二楼", pinyin: "èr lóu" }, { text: "，", pinyin: "" }, { text: "是", pinyin: "shì" }, { text: "目前", pinyin: "mù qián" }, { text: "世界", pinyin: "shì jiè" }, { text: "上", pinyin: "shàng" }, { text: "最高", pinyin: "zuì gāo" }, { text: "的", pinyin: "de" }, { text: "室内", pinyin: "shì nèi" }, { text: "瀑布", pinyin: "pù bù" }, { text: "。", pinyin: "" },
+          { text: "“", pinyin: "" }, { text: "雨漩涡", pinyin: "yǔ xuán wō" }, { text: "”", pinyin: "" }, { text: "周围", pinyin: "zhōu wéi" }, { text: "是", pinyin: "shì" }, { text: "室内", pinyin: "sēn lín" }, { text: "森林", pinyin: "sēn lín" }, { text: "，", pinyin: "" }, { text: "置身其中", pinyin: "zhì shēn qí zhōng" }, { text: "，", pinyin: "" }, { text: "好像", pinyin: "hǎo xiàng" }, { text: "大自然", pinyin: "dà zì rán" }, { text: "就", pinyin: "jiù" }, { text: "在", pinyin: "zài" }, { text: "你", pinyin: "nǐ" }, { text: "身边", pinyin: "shēn biān" }, { text: "。", pinyin: "" }
+        ],
+        quiz: {
+          question: "雨漩涡有_______米高，是目前世界上最高的室内_________。",
+          answer: ["40", "瀑布"]
+        },
+        skill: {
+          content: [
+            { text: "它", pinyin: "tā" }, { text: "高", pinyin: "gāo" }, { text: "40米", pinyin: "sì shí mǐ" }, { text: "，", pinyin: "" }, { text: "从", pinyin: "cóng" }, { text: "五楼", pinyin: "wǔ lóu" }, { text: "一直", pinyin: "yì zhí" }, { text: "到", pinyin: "dào" }, { text: "地下", pinyin: "dì xià" }, { text: "二楼", pinyin: "èr lóu" }, { text: "，", pinyin: "" }, { text: "是", pinyin: "shì" }, { text: "目前", pinyin: "mù qián" }, { text: "世界", pinyin: "shì jiè" }, { text: "上", pinyin: "shàng" }, { text: "最高", pinyin: "zuì gāo" }, { text: "的", pinyin: "de" }, { text: "室内", pinyin: "shì nèi" }, { text: "瀑布", pinyin: "pù bù" }, { text: "。", pinyin: "" }
+          ],
+          answer: "列数字"
+        }
+      },
+      {
+        id: 'play',
+        title: '游乐设施',
+        member: '3号',
+        icon: <Gamepad2 className="w-6 h-6" />,
+        color: 'bg-green-500',
+        content: [
+          { text: "这里", pinyin: "zhè lǐ" }, { text: "有", pinyin: "yǒu" }, { text: "不少", pinyin: "bù shǎo" }, { text: "好玩", pinyin: "hǎo wán" }, { text: "、", pinyin: "" }, { text: "刺激", pinyin: "cì jī" }, { text: "的", pinyin: "de" }, { text: "游乐设施", pinyin: "yóu lè shè shī" }, { text: "，", pinyin: "" }, { text: "比如", pinyin: "bǐ rú" }, { text: "天悬桥", pinyin: "tiān xuán qiáo" }, { text: "、", pinyin: "" }, { text: "镜子", pinyin: "jìng zi" }, { text: "迷宫", pinyin: "mí gōng" }, { text: "等", pinyin: "děng" }, { text: "。", pinyin: "" },
+          { text: "不过", pinyin: "bú guò" }, { text: "，", pinyin: "" }, { text: "最", pinyin: "zuì" }, { text: "特别", pinyin: "tè bié" }, { text: "的", pinyin: "de" }, { text: "是", pinyin: "shì" }, { text: "“", pinyin: "" }, { text: "天空之网", pinyin: "tiān kōng zhī wǎng" }, { text: "”", pinyin: "" }, { text: "。", pinyin: "" },
+          { text: "“", pinyin: "" }, { text: "天空之网", pinyin: "tiān kōng zhī wǎng" }, { text: "”", pinyin: "" }, { text: "包括", pinyin: "bāo kuò" }, { text: "步行网", pinyin: "bù xíng wǎng" }, { text: "和", pinyin: "hé" }, { text: "蹦跳网", pinyin: "bèng tiào wǎng" }, { text: "。", pinyin: "" },
+          { text: "步行网", pinyin: "bù xíng wǎng" }, { text: "是", pinyin: "shì" }, { text: "一条", pinyin: "yì tiáo" }, { text: "50米", pinyin: "wǔ shí mǐ" }, { text: "长", pinyin: "cháng" }, { text: "的", pinyin: "de" }, { text: "网状", pinyin: "wǎng zhuàng" }, { text: "步道", pinyin: "bù dào" }, { text: "，", pinyin: "" }, { text: "离", pinyin: "lí" }, { text: "地面", pinyin: "dì miàn" }, { text: "25米", pinyin: "èr shí wǔ mǐ" }, { text: "高", pinyin: "gāo" }, { text: "，", pinyin: "" },
+          { text: "走起来", pinyin: "zǒu qǐ lái" }, { text: "摇摇晃晃", pinyin: "yáo yáo huàng huàng" }, { text: "de" }, { text: "，", pinyin: "" }, { text: "需要", pinyin: "xū yào" }, { text: "几分", pinyin: "jǐ fēn" }, { text: "胆量", pinyin: "dǎn liàng" }, { text: "；", pinyin: "" },
+          { text: "蹦跳网", pinyin: "bèng tiào wǎng" }, { text: "则", pinyin: "zé" }, { text: "有", pinyin: "liǎng bǎi wǔ shí mǐ" }, { text: "长", pinyin: "cháng" }, { text: "，", pinyin: "" }, { text: "在", pinyin: "zài" }, { text: "上面", pinyin: "shàng mian" }, { text: "蹦跳", pinyin: "bèng tiào" }, { text: "时", pinyin: "shí" }, { text: "，", pinyin: "" }, { text: "有", pinyin: "yǒu" }, { text: "一种", pinyin: "yì zhǒng" }, { text: "飞起来", pinyin: "fēi qǐ lái" }, { text: "的", pinyin: "de" }, { text: "感觉", pinyin: "gǎn jué" }, { text: "。", pinyin: "" }
+        ],
+        quiz: {
+          question: "“天空之网“包括______网和____网。",
+          answer: ["步行", "蹦跳"]
+        },
+        skill: {
+          content: [
+            { text: "这里", pinyin: "zhè lǐ" }, { text: "有", pinyin: "yǒu" }, { text: "不少", pinyin: "bù shǎo" }, { text: "好玩", pinyin: "hǎo wán" }, { text: "、", pinyin: "" }, { text: "刺激", pinyin: "cì jī" }, { text: "的", pinyin: "de" }, { text: "游乐设施", pinyin: "yóu lè shè shī" }, { text: "，", pinyin: "" }, { text: "比如", pinyin: "bǐ rú" }, { text: "天悬桥", pinyin: "tiān xuán qiáo" }, { text: "、", pinyin: "" }, { text: "镜子", pinyin: "jìng zi" }, { text: "迷宫", pinyin: "mí gōng" }, { text: "等", pinyin: "děng" }, { text: "。", pinyin: "" }
+          ],
+          answer: "举例子"
+        }
+      },
+      {
+        id: 'eat',
+        title: '美食商店',
+        member: '4号',
+        icon: <Utensils className="w-6 h-6" />,
+        color: 'bg-cyan-500',
+        content: [
+          { text: "这里", pinyin: "zhè lǐ" }, { text: "有", pinyin: "yǒu" }, { text: "200多", pinyin: "liǎng bǎi duō" }, { text: "家", pinyin: "jiā" }, { text: "商店", pinyin: "shāng diàn" }, { text: "，", pinyin: "" }, { text: "其中", pinyin: "qí zhōng" }, { text: "不少", pinyin: "bù shǎo" }, { text: "和", pinyin: "hé" }, { text: "“", pinyin: "" }, { text: "吃", pinyin: "chī" }, { text: "”", pinyin: "" }, { text: "有关", pinyin: "yǒu guān" }, { text: "，", pinyin: "" },
+          { text: "零食店", pinyin: "líng shí diàn" }, { text: "、", pinyin: "" }, 
+          { text: "甜品店", pinyin: "tián pǐn diàn" }, { text: "、", pinyin: "" }, 
+          { text: "饮料店", pinyin: "yǐn liào diàn" }, { text: "和", pinyin: "hé" }, 
+          { text: "特色", pinyin: "tè sè" }, { text: "餐馆", pinyin: "cān guǎn" }, { text: "应有尽有", pinyin: "yīng yǒu jìn yǒu" }, { text: "。", pinyin: "" },
+          { text: "在这里", pinyin: "zài zhè lǐ" }, { text: "，", pinyin: "" }, { text: "你", pinyin: "nǐ" }, { text: "可以", pinyin: "kě yǐ" }, { text: "吃到", pinyin: "chī dào" }, { text: "世界各地", pinyin: "shì jiè gè dì" }, { text: "的", pinyin: "de" }, { text: "美食", pinyin: "měi shí" }, { text: "，", pinyin: "" },
+          { text: "有的", pinyin: "yǒu de" }, { text: "甚至", pinyin: "shèn zhì" }, { text: "本地", pinyin: "běn dì" }, { text: "难得一见", pinyin: "nán dé yī jiàn" }, { text: "的", pinyin: "de" }, { text: "。", pinyin: "" }
+        ],
+        quiz: {
+          question: "星耀樟宜有______多家商店。",
+          answer: "200"
+        },
+        skill: {
+          content: [
+            { text: "其中", pinyin: "qí zhōng" }, { text: "不少", pinyin: "bù shǎo" }, { text: "和", pinyin: "hé" }, { text: "“", pinyin: "" }, { text: "吃", pinyin: "chī" }, { text: "”", pinyin: "" }, { text: "有关", pinyin: "yǒu guān" }, { text: "，", pinyin: "" },
+            { text: "零食店", pinyin: "líng shí diàn" }, { text: "、", pinyin: "" }, 
+            { text: "甜品店", pinyin: "tián pǐn diàn" }, { text: "、", pinyin: "" }, 
+            { text: "饮料店", pinyin: "yǐn liào diàn" }, { text: "和", pinyin: "hé" }, 
+            { text: "特色", pinyin: "tè sè" }, { text: "餐馆", pinyin: "cān guǎn" }, { text: "应有尽有", pinyin: "yīng yǒu jìn yǒu" }, { text: "。", pinyin: "" }
+          ],
+          answer: "举例子"
+        }
+      }
+    ];
+
+    function App() {
+      const [currentSection, setCurrentSection] = useState(null);
+      const [selectedWord, setSelectedWord] = useState(null);
+      const [errorMessage, setErrorMessage] = useState("");
+      
+      // 新增：小测验状态
+      const [showQuiz, setShowQuiz] = useState(false);
+      const [quizInput, setQuizInput] = useState("");
+      const [quizError, setQuizError] = useState(false);
+
+      // 新增：说明方法板块状态 (增加 completion 状态)
+      const [viewState, setViewState] = useState('content'); // 'content', 'skill', 或 'completion'
+      const [skillAnswered, setSkillAnswered] = useState(false);
+      const [skillError, setSkillError] = useState(false);
+
+      // 新增：进度与词语本状态
+      const [completedSections, setCompletedSections] = useState([]);
+      const [clickedWords, setClickedWords] = useState([]);
+
+      const openSection = (section) => {
+        setCurrentSection(section);
+        setViewState('content');
+        setSkillAnswered(false);
+        setSkillError(false);
+        setClickedWords([]); // 进入新板块时，重置专属词语本，确保是该组员专属的
+      };
+
+      const showError = (msg) => {
+        setErrorMessage(msg);
+        setTimeout(() => setErrorMessage(""), 4000);
+      };
+
+      const handleBackClick = () => {
+        if (currentSection && currentSection.quiz) {
+          setShowQuiz(true);
+          setQuizInput("");
+          setQuizError(false);
+        } else {
+          setCurrentSection(null);
+        }
+      };
+
+      const handleQuizSubmit = () => {
+        if (!quizInput.trim()) return;
+        
+        let isCorrect = false;
+        const expected = currentSection.quiz.answer;
+        
+        // 如果答案是一个数组（有多个填空），检查输入是否包含所有的关键词
+        if (Array.isArray(expected)) {
+          isCorrect = expected.every(keyword => quizInput.includes(keyword));
+        } else {
+          // 如果只有一个填空，检查答案是否完全一致（忽略前后空格）
+          isCorrect = quizInput.trim() === expected;
+        }
+        
+        if (isCorrect) {
+          setShowQuiz(false);
+          setCompletedSections(prev => {
+            if (!prev.includes(currentSection.id)) {
+              return [...prev, currentSection.id];
+            }
+            return prev;
+          });
+          setViewState('completion'); // 答对后，进入专属的完成页面
+        } else {
+          setQuizError(true); // 显示错误提示
+        }
+      };
+
+      const handleQuizKeyPress = (e) => {
+        if (e.key === 'Enter') {
+          handleQuizSubmit();
+        }
+      };
+
+      const renderWord = (item, index) => {
+        const foundWord = Object.keys(VOCABULARY).find(v => item.text.includes(v));
+        const isClickable = !!foundWord;
+        const wordData = foundWord ? VOCABULARY[foundWord] : null;
+
+        const handleWordClick = () => {
+          if (isClickable) {
+            setSelectedWord({ name: foundWord, ...wordData });
+            // 将点击过的词语加入专属词汇本（确保不重复）
+            setClickedWords(prev => {
+              if (!prev.includes(foundWord)) return [...prev, foundWord];
+              return prev;
+            });
+          }
+        };
+
+        if (wordData && wordData.icon) {
+          return (
+            <div 
+              key={index} 
+              className="inline-flex flex-col items-center mx-2 mb-4 cursor-pointer hover:scale-105 transition-transform bg-white rounded-2xl p-3 shadow-sm border border-slate-100"
+              onClick={handleWordClick}
+            >
+              <div className="text-4xl mb-1">{wordData.icon}</div>
+              <span className="text-[10px] text-slate-400 font-mono h-4 leading-none select-none">
+                {item.pinyin}
+              </span>
+              <span className="text-xl font-bold text-blue-600 border-b-2 border-blue-200">
+                {item.text}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-1 uppercase font-black">{wordData.english}</span>
+            </div>
+          );
+        }
+
+        return (
+          <div 
+            key={index} 
+            className={`inline-flex flex-col items-center mx-0.5 mb-2 group transition-transform ${isClickable ? 'cursor-pointer hover:scale-105' : ''}`}
+            onClick={handleWordClick}
+          >
+            <span className="text-[10px] text-slate-400 font-mono h-4 leading-none select-none">
+              {item.pinyin}
+            </span>
+            <span className={`text-xl font-medium ${isClickable ? 'text-blue-600 border-b-2 border-blue-200' : 'text-slate-800'}`}>
+              {item.text}
+            </span>
+          </div>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-slate-50 font-sans text-slate-800 pb-20">
+          {/* 顶部导航 */}
+          <header className="bg-white shadow-sm p-4 flex justify-between items-center sticky top-0 z-10">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-emerald-500 rounded-full flex items-center justify-center text-white font-bold text-xl">星</div>
+              <h1 className="text-xl font-bold text-slate-700">中一G2单元三核心</h1>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-1 text-slate-400 bg-slate-100 px-3 py-1 rounded-full text-xs">
+                <Users className="w-3 h-3" />
+                <span>小组合作模式</span>
+              </div>
+              <div className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-bold uppercase tracking-tight">单元三 核心</div>
+            </div>
+          </header>
+
+          {/* 错误提示框 */}
+          {errorMessage && (
+            <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-red-50 text-red-600 border border-red-200 px-6 py-3 rounded-full flex items-center gap-2 z-50 shadow-lg animate-in slide-in-from-top fade-in duration-300">
+              <AlertCircle className="w-5 h-5" />
+              <span className="font-bold text-sm">{errorMessage}</span>
+            </div>
+          )}
+
+          {!currentSection ? (
+            <main className="p-6 max-w-5xl mx-auto space-y-8 animate-in fade-in duration-700">
+              {/* 头图区域 */}
+              <section className="relative h-80 rounded-[3rem] overflow-hidden shadow-xl border-4 border-white bg-gradient-to-br from-emerald-400 to-teal-600 flex flex-col justify-end p-10">
+                <h2 className="text-white text-4xl font-black mb-2 drop-shadow-md">单元三 核心</h2>
+                <p className="text-emerald-100 text-3xl font-bold drop-shadow-sm">《迷人的星耀樟宜》</p>
+                <p className="text-white/80 mt-2 font-medium">请找到你的编号，点击进入学习任务区 👇</p>
+              </section>
+
+              {/* 任务卡片选择区 */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {SECTIONS.map((section) => {
+                  const isCompleted = completedSections.includes(section.id);
+                  return (
+                    <button
+                      key={section.id}
+                      onClick={() => openSection(section)}
+                      className={`${isCompleted ? 'bg-slate-300' : section.color} hover:brightness-110 active:scale-95 transition-all text-white p-5 rounded-[2.5rem] shadow-lg flex flex-col items-center gap-3 border-b-8 border-black/20 relative group`}
+                    >
+                      {isCompleted && (
+                        <div className="absolute top-2 left-2 bg-emerald-500 text-white rounded-full p-1 shadow-sm">
+                          <Check className="w-5 h-5" />
+                        </div>
+                      )}
+                      <div className="absolute -top-3 -right-3 bg-yellow-400 text-slate-900 text-xs font-black px-3 py-1 rounded-full shadow-md z-10 border-2 border-white ring-2 ring-yellow-400/20">
+                        {section.member}
+                      </div>
+                      <div className={`${isCompleted ? 'bg-slate-400/50' : 'bg-white/20'} p-4 rounded-2xl group-hover:bg-white/30 transition-colors`}>
+                        {section.icon}
+                      </div>
+                      <span className="font-bold text-lg">{section.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 任务说明区域 */}
+              <div className="bg-yellow-50 border-2 border-yellow-200 rounded-3xl p-6 flex items-start gap-4 shadow-sm">
+                <div className="bg-yellow-400 p-2 rounded-xl text-white">
+                  <Users className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800 mb-1 italic">小组任务 (Group Mission)</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed">
+                    1. 确认你的编号 (1-4)。<br/>
+                    2. 进入对应区域，练习朗读并掌握重点词汇。<br/>
+                    3. 完成后，回到小组向其他成员分享你学习的内容！
+                  </p>
+                </div>
+              </div>
+            </main>
+          ) : (
+            <main className="p-4 max-w-3xl mx-auto animate-in slide-in-from-bottom-4 duration-500">
+              {viewState !== 'completion' && (
+                <button onClick={handleBackClick} className="mb-6 flex items-center gap-2 text-slate-500 hover:text-emerald-600 font-bold bg-white px-4 py-2 rounded-full shadow-sm w-fit border border-slate-100 transition-colors">
+                  <ChevronRight className="w-5 h-5 rotate-180" /> 返回主页
+                </button>
+              )}
+
+              {/* 学习内容区 或 完成页面 */}
+              {viewState === 'completion' ? (
+                <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border-8 border-emerald-400 text-center animate-in zoom-in duration-500">
+                  <div className="bg-emerald-500 p-12 text-white relative">
+                    <h2 className="text-5xl font-black mb-4 drop-shadow-md">🏆 很好！完成了！</h2>
+                    <p className="text-2xl font-bold text-emerald-100">恭喜你闯关成功，组员（{currentSection.member}）已完成学习自己的部分！</p>
+                  </div>
+                  
+                  <div className="p-10 md:p-14">
+                    <div className="inline-flex items-center gap-2 bg-yellow-100 text-yellow-700 px-6 py-2 rounded-full font-black text-xl mb-8">
+                      <span>📖 你的专属词语本</span>
+                    </div>
+                    
+                    {clickedWords.length === 0 ? (
+                      <p className="text-slate-500 font-medium text-lg">你太厉害了，一个词语都没点就过关了！</p>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {clickedWords.map((word, idx) => {
+                          const data = VOCABULARY[word];
+                          return (
+                            <div key={idx} className="bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl flex flex-col items-center hover:border-emerald-300 hover:bg-emerald-50 transition-colors cursor-pointer" onClick={() => setSelectedWord({ name: word, ...data })}>
+                              <span className="text-emerald-500 font-mono text-xs font-black mb-1 tracking-widest uppercase">{data.pinyin}</span>
+                              <span className="text-2xl font-black text-slate-800">{word}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-8 bg-slate-50 flex justify-center gap-4">
+                    <button onClick={() => window.print()} className="bg-slate-800 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all">
+                      🖨️ 打印词语本
+                    </button>
+                    <button onClick={() => setCurrentSection(null)} className="bg-white text-slate-600 font-bold text-lg px-8 py-4 rounded-2xl shadow-sm border-2 border-slate-200 hover:bg-slate-100 active:scale-95 transition-all">
+                      返回主页
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-slate-100">
+                  <div className={`${currentSection.color} p-8 text-white flex justify-between items-center relative`}>
+                    <div className="flex flex-col">
+                      <span className="text-white/60 font-black text-xs uppercase tracking-widest mb-1 italic">
+                        任务区 · {currentSection.member} {viewState === 'skill' && '· 写作技能'}
+                      </span>
+                      <h2 className="text-3xl font-black">{currentSection.title}</h2>
+                    </div>
+                  </div>
+                  
+                  {viewState === 'content' ? (
+                    <div className="p-8 md:p-12">
+                      <div className="flex flex-wrap items-end leading-[3.8rem]">
+                        {currentSection.content.map((item, index) => renderWord(item, index))}
+                      </div>
+                      
+                      {currentSection.skill && (
+                        <div className="mt-12 flex justify-end border-t border-slate-100 pt-8">
+                          <button 
+                            onClick={() => setViewState('skill')}
+                            className="bg-emerald-500 text-white font-bold text-lg px-8 py-4 rounded-2xl shadow-lg hover:bg-emerald-600 hover:-translate-y-1 active:translate-y-0 transition-all flex items-center gap-2"
+                          >
+                            下一步：写作技能 <ChevronRight className="w-6 h-6" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-8 md:p-12 bg-slate-50">
+                      <h3 className="text-2xl font-black mb-6 text-slate-800">✍️ 说明方法小锦囊</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <div className="bg-white p-6 rounded-2xl border-2 border-blue-200 shadow-sm">
+                          <h4 className="font-black text-blue-600 text-xl mb-4 flex items-center gap-2">
+                            🔢 <span className="cursor-pointer hover:underline" onClick={() => setSelectedWord({name: '列数字', ...VOCABULARY['列数字']})}>列数字</span>
+                          </h4>
+                          <div className="flex flex-wrap items-end leading-[3rem]">
+                            {SKILL_EXPLANATIONS["列数字"].map((item, index) => renderWord(item, index))}
+                          </div>
+                        </div>
+                        <div className="bg-white p-6 rounded-2xl border-2 border-purple-200 shadow-sm">
+                          <h4 className="font-black text-purple-600 text-xl mb-4 flex items-center gap-2">
+                            🍎 <span className="cursor-pointer hover:underline" onClick={() => setSelectedWord({name: '举例子', ...VOCABULARY['举例子']})}>举例子</span>
+                          </h4>
+                          <div className="flex flex-wrap items-end leading-[3rem]">
+                            {SKILL_EXPLANATIONS["举例子"].map((item, index) => renderWord(item, index))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                        <p className="text-slate-800 font-bold text-lg mb-4">想一想，你在课文里读到的这句话，使用了哪种说明方法？</p>
+                        <div className="bg-slate-50 border-l-4 border-emerald-500 p-4 px-6 rounded-r-xl mb-6">
+                          <div className="flex flex-wrap items-end leading-[3.8rem]">
+                            {currentSection.skill.content.map((item, index) => renderWord(item, index))}
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-4">
+                          {['列数字', '举例子'].map(option => (
+                            <button 
+                              key={option}
+                              onClick={() => {
+                                if (option === currentSection.skill.answer) {
+                                  setSkillAnswered(true);
+                                  setSkillError(false);
+                                } else {
+                                  setSkillError(true);
+                                  setSkillAnswered(false);
+                                }
+                              }}
+                              disabled={skillAnswered}
+                              className={`flex-1 py-4 rounded-2xl font-black text-xl transition-all border-2 ${
+                                skillAnswered 
+                                  ? (option === currentSection.skill.answer ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-slate-100 text-slate-400 border-slate-200 opacity-50')
+                                  : 'bg-white text-slate-700 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'
+                              }`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+
+                        {skillError && !skillAnswered && (
+                          <p className="text-red-500 font-bold mt-4 animate-in slide-in-from-top-2 flex items-center gap-2">
+                            <X className="w-5 h-5" /> 哎呀，不对哦！再仔细看看上面的解释吧。
+                          </p>
+                        )}
+
+                        {skillAnswered && (
+                          <div className="mt-8 pt-6 border-t border-slate-100 animate-in fade-in flex flex-col items-center gap-4">
+                            <p className="text-emerald-600 font-black text-xl">🎉 答对啦！你真棒！</p>
+                            <button 
+                              onClick={handleBackClick}
+                              className="bg-yellow-400 text-slate-900 font-black text-lg px-10 py-4 rounded-2xl shadow-lg hover:bg-yellow-500 hover:-translate-y-1 active:translate-y-0 transition-all"
+                            >
+                              进行过关小测验
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </main>
+          )}
+
+          {/* 词汇弹窗解析 */}
+          {selectedWord && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-white rounded-[2.5rem] w-full max-sm:max-w-xs max-w-sm overflow-hidden shadow-2xl transform animate-in zoom-in duration-200 border-4 border-white">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-8 text-white relative flex flex-col items-center text-center">
+                  {selectedWord.icon && <div className="text-7xl mb-4 bg-white/20 w-24 h-24 rounded-full flex items-center justify-center shadow-inner">{selectedWord.icon}</div>}
+                  <h4 className="text-4xl font-black mb-1">{selectedWord.name}</h4>
+                  <p className="text-blue-100 font-mono text-xl">{selectedWord.pinyin}</p>
+                  <button onClick={() => setSelectedWord(null)} className="absolute top-4 right-4 bg-white/20 p-2 rounded-full hover:bg-white/40 transition-colors">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <div className="p-8 space-y-6">
+                  <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+                    <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-1">意思 (Easy Chinese)</p>
+                    <p className="text-slate-700 text-2xl font-bold">{selectedWord.meaning}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">English</p>
+                    <p className="text-blue-600 text-xl font-bold italic border-l-4 border-blue-200 pl-3">{selectedWord.english}</p>
+                  </div>
+                  {selectedWord.example && (
+                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-100">
+                      <p className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mb-1">例句 (Example)</p>
+                      <p className="text-slate-700 text-lg font-medium leading-snug">{selectedWord.example}</p>
+                    </div>
+                  )}
+                  <button 
+                    onClick={() => setSelectedWord(null)}
+                    className="w-full bg-slate-800 text-white font-black py-5 rounded-2xl text-xl shadow-lg hover:bg-slate-900 active:scale-95 transition-all mt-2"
+                  >
+                    知道了！
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 新增：小测验弹窗 */}
+          {showQuiz && currentSection && currentSection.quiz && (
+            <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+              <div className="bg-white rounded-[2.5rem] w-full max-w-md overflow-hidden shadow-2xl transform animate-in zoom-in duration-200 border-4 border-emerald-400">
+                <div className="bg-emerald-500 p-6 text-white text-center">
+                  <div className="inline-block bg-white/20 p-3 rounded-full mb-2">
+                    <span className="text-3xl">✍️</span>
+                  </div>
+                  <h3 className="text-2xl font-black">过关小测验</h3>
+                  <p className="text-emerald-100 text-sm mt-1">答对这道题，才能返回主页哦！</p>
+                </div>
+                
+                <div className="p-8 space-y-6">
+                  <p className="text-slate-800 text-xl font-bold leading-relaxed">
+                    {currentSection.quiz.question}
+                  </p>
+                  
+                  <div>
+                    <input 
+                      type="text" 
+                      placeholder="请在这里输入答案..."
+                      value={quizInput}
+                      onChange={(e) => {
+                        setQuizInput(e.target.value);
+                        setQuizError(false); // 重新输入时清除错误
+                      }}
+                      onKeyPress={handleQuizKeyPress}
+                      className={`w-full px-5 py-4 rounded-2xl border-2 text-lg font-bold focus:outline-none transition-colors ${
+                        quizError ? 'border-red-400 bg-red-50 text-red-600' : 'border-slate-200 bg-slate-50 focus:border-emerald-500 focus:bg-white text-slate-800'
+                      }`}
+                      autoFocus
+                    />
+                    {quizError && (
+                      <p className="text-red-500 text-sm font-bold mt-2 flex items-center gap-1 animate-in slide-in-from-top-1">
+                        ❌ 回答不正确，请关掉弹窗再复习一下！
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={() => setShowQuiz(false)}
+                      className="flex-1 bg-slate-100 text-slate-600 font-bold py-4 rounded-2xl hover:bg-slate-200 transition-colors"
+                    >
+                      继续学习
+                    </button>
+                    <button 
+                      onClick={handleQuizSubmit}
+                      className="flex-1 bg-emerald-500 text-white font-bold py-4 rounded-2xl shadow-lg hover:bg-emerald-600 hover:-translate-y-1 active:translate-y-0 transition-all"
+                    >
+                      提交答案
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    // 渲染 React 应用
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
